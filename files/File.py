@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import filetype as ft
-import pandas as pd
-import numpy as np
-from joblib.numpy_pickle_utils import xrange
+from Bio import SeqIO
+
+from files.File_type import Filetype
+
 
 class FileInput:
-    """Decorator for file checking"""
+    """Decorator for file checking
+    @:param file Path
+    @:param file Type (gtf,bed,fa,bedgraph)
+    @:param file is zipped or not(True or False)
+    @:param type of zip if zipped(gz)
+    @:param header is present (True or False)"""
 
     def __init__(self, file_path, file_type, zipped, zip_type, header_present):
         self.file_path = file_path
@@ -15,9 +20,21 @@ class FileInput:
         self.zip_type = zip_type
         self.header_present = header_present
 
-    # TODO: COuld be outsourced by the parser
-    def check_input_file(file_path):
-        """A function to test an input file and classifies it by content"""
+    def get_dict(self):
+        """Method returns a dictionary of the file
+        @:return dict"""
+        if self.file_type == Filetype.FASTA:
+            return {rec.id: rec.seq for rec in SeqIO.parse(self.file_path, "fasta")}
+        # TODO: Return a dictionary of GTF, BED, BEDGRAPH
+
+    def get_path(self):
+        """Get the absolut path from the File
+        @:return the location File"""
+        return self.file_path
+
+
+    """def check_input_file(file_path):
+        #A function to test an input file and classifies it by content
         # try to guess file type by analysing the head
         guessed_type = ft.guess(file_path)
         file_zipped = False
@@ -73,6 +90,8 @@ class FileInput:
             # unsupported format
             return FileInput(file_path, 'unsupported', False, zip_type, header_present)
 
+    # There might be some Packages that allow access to the file. This has not be
+    # written by myself
     def getGTFFIle(self):
         gff3_dir = self.file_path()
         GFF3 = pd.read_csv(
@@ -84,4 +103,4 @@ class FileInput:
             skiprows=[i for i in xrange(25)]
         )
         GFF3 = GFF3[GFF3['source'].notnull()]
-        return GFF3
+        return GFF3"""
