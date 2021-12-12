@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from Bio import SeqIO
-
+from pyBedGraph import BedGraph
+from pybedtools import BedTool
 from files.File_type import Filetype
 
 
@@ -13,25 +14,45 @@ class FileInput:
     @:param type of zip if zipped(gz)
     @:param header is present (True or False)"""
 
-    def __init__(self, file_path, file_type, zipped, zip_type, header_present):
+    def __init__(self, file_name, file_path, file_type, zipped, zip_type, header_present, server_path):
+        self.file_name = file_name
         self.file_path = file_path
         self.file_type = file_type
         self.zipped = zipped
         self.zip_type = zip_type
         self.header_present = header_present
+        self.server_path = server_path
 
     def get_dict(self):
         """Method returns a dictionary of the file
         @:return dict"""
         if self.file_type == Filetype.FASTA:
-            return {rec.id: rec.seq for rec in SeqIO.parse(self.file_path, "fasta")}
-        # TODO: Return a dictionary of GTF, BED, BEDGRAPH
+            return [{'value': rec.id, 'label': rec.name} for rec in SeqIO.parse(self.file_path, "fasta")]
+        if self.file_type == Filetype.BEDGRAPH:
+            bed_graph = BedGraph('samples/example.sizes', self.file_path, ignore_missing_bp=False)
+            return bed_graph.load_chrom_data('Chr1')
+        if self.file_type == Filetype.BED:  # BED6
+            return [{'value': rec[3], 'label': rec[0] + " : " + rec[3]} for rec in BedTool(self.file_path)]
+        # TODO: Return a dictionary of GTF, BED12, BEDGRAPH
 
-    def get_path(self):
-        """Get the absolut path from the File
-        @:return the location File"""
-        return self.file_path
+    def get_general_dict(self):
+        return dict(name="Read " + str(self.file_type),
+                    url=self.server_path,
+                    nameField='gene',
+                    # indexed='false',
+                    color='rgb(191, 188, 6)')
 
+    def get_locus(self, genome):
+        if self.file_type == Filetype.BED:
+            for rec in BedTool(self.file_path):
+                if rec[3] == genome:
+                    return [rec[0] + ":" + rec[1] + "-" + rec[2]]
+
+    def get_filename(self):
+        return self.file_name
+
+    def get_filetype(self):
+        return self.file_type.__str__()
 
     """def check_input_file(file_path):
         #A function to test an input file and classifies it by content

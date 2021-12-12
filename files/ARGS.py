@@ -6,13 +6,11 @@ from pprint import pprint
 
 
 class Args:
-    """Create Object class ARGS
-        @:param args takes parameter from the main"""
+    """Create Object class ARGS"""
 
     def __init__(self):
         self.parser = ArgumentParser(description='Interactive, web based visualization for iCLIP and rna-seq data.')
         self.__set_argument(self)
-        # self.args = args
 
     @staticmethod
     def __dir_path(string):
@@ -57,7 +55,7 @@ class Args:
 
     def has_option(self, option):
         """Checks for option. If option does not exist it throws an Exception
-            @:param option to check, if the option is available
+            @:param option: to check, if the option is available
             @:return true if the option appears otherwise false"""
         if len(option) > 0:
             if hasattr(self.parser.parse_args(), option):
@@ -85,6 +83,7 @@ class Args:
     @staticmethod
     def __validate_directory(path):
         """Should be a private method, which checks the directory
+        @:param path: take a (absolute) path
         @:return the path of the directory"""
         if not path.is_dir():
             pprint("Not a directory")
