@@ -10,6 +10,8 @@ from dash import html
 # Static Default style
 from flask import send_from_directory, Flask
 
+from files import File_type
+
 
 class AppHandler:
     """
@@ -24,7 +26,6 @@ class AppHandler:
         self.dir = absolut_dir_path
         self.file_option = iclip.get_file_options()
         self.current_gene_options = iclip.get_current_gene_dict()
-        self.current_file = iclip.get_current_file()
         self.iclip = iclip
 
         @self.server.route('/tracks/<path:path>')
@@ -48,19 +49,18 @@ class AppHandler:
                         fastaURL="tracks/TAIR10_chr_all_noYWMKSRD.fa",
                         indexURL="https://s3.amazonaws.com/igv.org.genomes/tair10/TAIR10_chr_all.fas.fai",
                         aliasURL="https://s3.amazonaws.com/igv.org.genomes/tair10/TAIR10_alias.tab",
-                        tracks=[
-                            iclip.set_reference()
-                        ])
+                        tracks=iclip.set_reference()
+                    )
                 )])
 
-        @self.app.callback(
+        """@self.app.callback(
             Output('Gen-select', 'options'),
             Input('File-Select', 'value')
         )
         def return_gene_selection(gene):
             iclip.set_selected_file(gene)
             newopt = self.iclip.get_current_gene_dict()
-            return newopt
+            return newopt"""
 
         @self.app.callback(
             Output('descDiv', 'children'),
@@ -78,25 +78,24 @@ class AppHandler:
         self.app.run_server(debug=True, port=8888)
 
     def clustergram(self):
-        return html.Div([html.Div([
+        """return html.Div([html.Div([
             dcc.Dropdown(
                 id="File-Select",
                 options=self.file_option,
                 value=self.file_option[0]['value']
             ),
             html.Div(id='igv-container')
-        ]),
-            html.Div([
-                # dcc.Loading(id='igv-container'),
-                dcc.Dropdown(
-                    id='Gen-select',
-                    options=self.current_gene_options,
-                    placeholder='Select a gene...'
-                ),
-                dcc.Loading(id='default-igv-container'),
-                html.Div(id='select-gen'),
-                html.Hr(),
-            ]),
+        ]),"""
+        return html.Div([
+            # dcc.Loading(id='igv-container'),
+            dcc.Dropdown(
+                id='Gen-select',
+                options=self.current_gene_options,
+                placeholder='Select a gene...'
+            ),
+            dcc.Loading(id='default-igv-container'),
+            html.Div(id='select-gen'),
+            html.Hr(),
         ])
 
     @staticmethod
@@ -115,6 +114,4 @@ class AppHandler:
         ])
 
     def get_layout(self):
-        return html.Div(
-            children=[self.clustergram()]
-        )
+        return html.Div(children=[self.clustergram()])

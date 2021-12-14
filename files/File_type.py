@@ -8,3 +8,4 @@ class Filetype(Enum):
     BED = auto()
     BEDGRAPH = auto()
     GFF = auto()
+    NONE = auto()

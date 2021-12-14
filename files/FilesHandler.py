@@ -1,5 +1,3 @@
-import os
-
 from os import listdir
 from os.path import isfile, join
 from collections import deque
@@ -8,88 +6,76 @@ from files import File_type
 from files.File import FileInput
 from files.FileHandlerInterface import FileHandlerInterface
 
+import re
+
 
 class FileHandler(FileHandlerInterface):
 
     def __init__(self, path):
-        self.fasta_files = deque()
-        self.bed_files = deque()
-        self.bedgraph_files = deque()
-        self.gtf_files = deque()
-        self.gff_files = deque()
+        # Could be stored in one Datastructure
+        self.all_files = deque()
         self.path_of_files = path
         self.SERVER_FOLDER = 'tracks/'
         self.load_all_files(path)
 
-    def get_fastas(self):
-        """Get all fasta files, which are stored
-        @:return fasta files"""
-        return self.fasta_files
+    def get_files_as_dict(self):
+        """Return a set of files of the same type as dict for the dropdown menue
+        @:return a dict with {value: filename, label: filename}"""
+        return [{'value': file.get_filename(), 'label': file.get_filename()} for file in self.all_files]
 
-    def get_gtfs(self):
-        """Get all gtf files, which are stored
-        @:return gtf files"""
-        return self.gtf_files
-
-    def get_beds(self):
-        """Get all bed files, which are stored
-        @:return bed files"""
-        return self.bed_files
-
-    def get_beds_as_dicts(self):
-        return [{'value': bed.get_filename(), 'label': bed.get_filename()} for bed in self.get_beds()]
-
-    def get_bedgraphs(self):
-        """Get all bedgraph files, which are stored
-        @:return bedgraph files"""
-        return self.bedgraph_files
-
-    def get_gffs(self):
-        """Get all gff files, which are stored
-        @:return gff files"""
-        return self.gff_files
+    def get_general_reference_dict(self):
+        return [track.get_general_dict() for track in self.all_files if track.get_filetype() != File_type.Filetype.FASTA]
 
     def get_specific_file(self, file):
         # at the moment just for bed
-        for entry in self.bed_files:
+        for entry in self.all_files:
             if entry.get_filename() == file:
                 return entry
         return FileNotFoundError
+
+    def get_beds(self):
+        beds = []
+        for file in self.all_files:
+            if file.get_filetype() == File_type.Filetype.BED:
+                beds.append(file)
+        return beds
+        # return [bed for bed in self.all_files if bed.get_filetype() == File_type.Filetype.BED]
+
+    def get_gene_dict(self):
+        return self.get_beds()[0].get_dict()
+
+    # TODO: Works only with bed at the moment
+
+    def get_locus(self, genome):
+        return self.get_beds()[0].get_locus(genome)
+
+    # TODO: Wokrs only with bed files
 
     def load_all_files(self, path):
         """Load all Files into the files handler"""
         only_files = [f for f in listdir(path) if isfile(join(path, f))]
         for file in only_files:
-            # print(os.access(file, os.EX_OK)) does not work
+            zip_type = ""
+            header_presend = False
+            file_type = File_type.Filetype.NONE
             try:
-                split_up = os.path.splitext(file)
-                # file_name = split_up[0]
-                file_extension = split_up[1]
-                if file_extension == '.fa':
-                    fasta_file = FileInput(file.__str__(), self.path_of_files / file.__str__(),
-                                           File_type.Filetype.FASTA,
-                                           False, False, False, self.SERVER_FOLDER + file.__str__())
-                    self.fasta_files.append(fasta_file)
-                if file_extension == '.bed':
-                    bed_file = FileInput(file.__str__(), self.path_of_files / file.__str__(),
-                                         File_type.Filetype.BED,
-                                         False, False, False, self.SERVER_FOLDER + file.__str__())
-                    self.bed_files.append(bed_file)
-                if file_extension == '.bedgraph':
-                    bedgraph_file = FileInput(file.__str__(), self.path_of_files / file.__str__(),
-                                              File_type.Filetype.BEDGRAPH,
-                                              False, False, False, self.SERVER_FOLDER + file.__str__())
-                    self.bedgraph_files.append(bedgraph_file)
-                if file_extension == '.gtf':
-                    gtf_file = FileInput(file.__str__(), self.path_of_files / file.__str__(),
-                                         File_type.Filetype.GTF,
-                                         False, False, False, self.SERVER_FOLDER + file.__str__())
-                    self.gtf_files.append(gtf_file)
-                if file_extension == '.gff':
-                    gff_file = FileInput(file.__str__(), self.path_of_files / file.__str__(),
-                                         File_type.Filetype.GTF,
-                                         False, False, False, self.SERVER_FOLDER + file.__str__())
-                    self.gff_files.append(gff_file)
-            # TODO: Add zip files and handle the files better than just by file_extension to identify the file type
+                if file.find('.fa') != -1:
+                    file_type = File_type.Filetype.FASTA
+                if re.search(r"\b.bed\b", file):  # explicit search for .bed. Maybe should be used also on other files
+                    # Be aware of files with index like .bed.gz.tbi
+                    file_type = File_type.Filetype.BED
+                if file.find('.bedgraph') != -1:
+                    file_type = File_type.Filetype.BEDGRAPH
+                if file.find('.gtf') != -1:
+                    file_type = File_type.Filetype.GTF
+                if file.find('.gff') != -1:
+                    file_type = File_type.Filetype.GFF
+                if file_type != File_type.Filetype.NONE and file.find('.gz') == -1:  # ignore zipped files
+                    the_file = FileInput(file.__str__(), self.path_of_files / file.__str__(),
+                                         file_type,
+                                         False, zip_type, header_presend, self.SERVER_FOLDER + file.__str__())
+                    self.all_files.append(the_file)
             except PermissionError:
                 raise OSError
+
+            # TODO: handle :ZONEIdentifier, zip, bam, tbi, fa, fas and other file types.

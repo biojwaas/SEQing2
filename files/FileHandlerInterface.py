@@ -16,12 +16,3 @@ class FileHandlerInterface(metaclass=abc.ABCMeta):
         """Load in all files of a folder"""
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def get_fastas(self):
-        """Return all Fasta-Files"""
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_gtfs(self):
-        """Return all GTF-FIles"""
-        raise NotImplementedError

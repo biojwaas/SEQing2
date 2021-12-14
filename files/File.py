@@ -15,6 +15,7 @@ class FileInput:
     @:param header is present (True or False)"""
 
     def __init__(self, file_name, file_path, file_type, zipped, zip_type, header_present, server_path):
+        # zip_type could be removed, also zipped and header_present
         self.file_name = file_name
         self.file_path = file_path
         self.file_type = file_type
@@ -33,7 +34,9 @@ class FileInput:
             return bed_graph.load_chrom_data('Chr1')
         if self.file_type == Filetype.BED:  # BED6
             return [{'value': rec[3], 'label': rec[0] + " : " + rec[3]} for rec in BedTool(self.file_path)]
-        # TODO: Return a dictionary of GTF, BED12, BEDGRAPH
+        if self.file_type == Filetype.GTF:
+            return [{'value': rec[8], 'label': rec[0] + ":" + rec[8]} for rec in BedTool(self.file_path)]
+        # TODO: Return a dictionary of GTF, BED12, BEDGRAPH, GFF
 
     def get_general_dict(self):
         return dict(name="Read " + str(self.file_type),
@@ -43,16 +46,21 @@ class FileInput:
                     color='rgb(191, 188, 6)')
 
     def get_locus(self, genome):
-        if self.file_type == Filetype.BED:
+        if self.file_type == Filetype.BED:  # BED6
             for rec in BedTool(self.file_path):
                 if rec[3] == genome:
                     return [rec[0] + ":" + rec[1] + "-" + rec[2]]
+        if self.file_type == Filetype.GTF:  # Check how long the entry is over the rows
+            for rec in BedTool(self.file_path):
+                if rec[8] == genome:
+                    return [rec[0] + ":" + rec[3] + "-" + rec[4]]
+        # TODO: ADD Locus dictionary of GFF, GTF, BED12,
 
     def get_filename(self):
         return self.file_name
 
     def get_filetype(self):
-        return self.file_type.__str__()
+        return self.file_type
 
     """def check_input_file(file_path):
         #A function to test an input file and classifies it by content
